@@ -130,7 +130,12 @@ u8_t tcp_active_pcbs_changed;
 /** Timer counter to handle calling slow-timer from tcp_tmr() */
 static u8_t tcp_timer;
 static u8_t tcp_timer_ctr;
-static u16_t tcp_new_port(struct tcp_pcb ** const* tcp_pcb_lists, const ip_addr_t* src, const ip_addr_t* dst, u16_t dport);
+
+static u16_t
+tcp_new_port_default(struct tcp_pcb ** const* tcp_pcb_lists, uint32_t tcp_pcb_lists_count, const ip_addr_t* src, const ip_addr_t* dst, u16_t dport, void* context);
+
+static tcp_new_port_fn tcp_new_port = tcp_new_port_default; //[lwip-dpdk] set default for tcp_new_port;
+static void* tcp_new_port_context;
 
 /**
  * Initialize this module.
@@ -157,6 +162,13 @@ tcp_tmr(void)
        tcp_tmr() is called. */
     tcp_slowtmr();
   }
+}
+
+void
+tcp_set_new_port_fn(tcp_new_port_fn fn, void *context)
+{
+  tcp_new_port = fn;
+  tcp_new_port_context = context;
 }
 
 #if LWIP_CALLBACK_API || TCP_LISTEN_BACKLOG
@@ -781,7 +793,7 @@ tcp_recved(struct tcp_pcb *pcb, u16_t len)
  * @return a new (free) local TCP port number
  */
 static u16_t
-tcp_new_port(struct tcp_pcb ** const* tcp_pcb_lists, const ip_addr_t* src __attribute__((unused)), const ip_addr_t* dst __attribute__((unused)), u16_t dport __attribute__((unused)))
+tcp_new_port_default(struct tcp_pcb ** const* tcp_pcb_lists, uint32_t tcp_pcb_lists_count, const ip_addr_t* src __attribute__((unused)), const ip_addr_t* dst __attribute__((unused)), u16_t dport __attribute__((unused)), void* context __attribute__((unused)))
 {
   u8_t i;
   u16_t n = 0;
@@ -792,7 +804,7 @@ again:
     tcp_port = TCP_LOCAL_PORT_RANGE_START;
   }
   /* Check all PCB lists. */
-  for (i = 0; i < NUM_TCP_PCB_LISTS; i++) {
+  for (i = 0; i < tcp_pcb_lists_count; i++) {
     for (pcb = *tcp_pcb_lists[i]; pcb != NULL; pcb = pcb->next) {
       if (pcb->local_port == tcp_port) {
         if (++n > (TCP_LOCAL_PORT_RANGE_END - TCP_LOCAL_PORT_RANGE_START)) {
@@ -854,7 +866,7 @@ tcp_connect(struct tcp_pcb *pcb, const ip_addr_t *ipaddr, u16_t port,
 
   old_local_port = pcb->local_port;
   if (pcb->local_port == 0) {
-    pcb->local_port = tcp_new_port(tcp_pcb_lists, &pcb->local_ip, ipaddr, port);
+    pcb->local_port = tcp_new_port(tcp_pcb_lists, NUM_TCP_PCB_LISTS, &pcb->local_ip, ipaddr, port, tcp_new_port_context);
     if (pcb->local_port == 0) {
       return ERR_BUF;
     }

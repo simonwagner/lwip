@@ -131,6 +131,24 @@ typedef void  (*tcp_err_fn)(void *arg, err_t err);
  */
 typedef err_t (*tcp_connected_fn)(void *arg, struct tcp_pcb *tpcb, err_t err);
 
+/** Function pointer to the function that selects a free source port
+ *  It is set by default to a function that just searches for the next
+ *  free port
+ *
+ * @param tcp_pcb_lists List of lists of PCBs that did already reserve a port
+ * @param src The source IP address
+ * @param dst The destination address
+ * @param dport The destination port
+ *
+ * @return The free destination port or 0 on error
+ */
+typedef u16_t (*tcp_new_port_fn)(struct tcp_pcb ** const* tcp_pcb_lists, uint32_t tcp_pcb_lists_count, const ip_addr_t* src, const ip_addr_t* dst, u16_t dport, void* context);
+
+/**
+ * Set the function for selecting a new port
+ */
+void tcp_set_new_port_fn(tcp_new_port_fn fn, void* context);
+
 #if LWIP_WND_SCALE
 #define RCV_WND_SCALE(pcb, wnd) (((wnd) >> (pcb)->rcv_scale))
 #define SND_WND_SCALE(pcb, wnd) (((wnd) << (pcb)->snd_scale))
