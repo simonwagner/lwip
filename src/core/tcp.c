@@ -569,10 +569,11 @@ tcp_bind(struct tcp_pcb *pcb, const ip_addr_t *ipaddr, u16_t port)
 #endif /* SO_REUSE */
 
   if (port == 0) {
-    port = tcp_new_port();
-    if (port == 0) {
-      return ERR_BUF;
-    }
+    /*
+     * [lwip-dpdk] do nothing, select the port lazily once
+     * we know where we want to connect to.
+     * tcp_connect will then select the correct port
+     */
   } else {
     /* Check if the address already is in use (on all lists) */
     for (i = 0; i < max_pcb_list; i++) {
