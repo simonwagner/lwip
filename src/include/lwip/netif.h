@@ -253,6 +253,12 @@ struct netif {
    *  to send a packet on the interface. This function outputs
    *  the pbuf as-is on the link medium. */
   netif_linkoutput_fn linkoutput;
+  struct {
+      err_t (*output)(struct netif *netif, struct pbuf *q, const ip4_addr_t *ipaddr);
+      void (*input)(struct pbuf *p, struct netif *netif);
+      void (*cleanup)(struct netif *netif);
+  } arp;
+
 #if LWIP_IPV6
   /** This function is called by the IPv6 module when it wants
    *  to send a packet on the interface. This function typically

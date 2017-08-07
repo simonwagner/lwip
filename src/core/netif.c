@@ -65,6 +65,7 @@
 #include "lwip/stats.h"
 #include "lwip/sys.h"
 #include "lwip/ip.h"
+#include "lwip/etharp.h"
 #if ENABLE_LOOPBACK
 #if LWIP_NETIF_LOOPBACK_MULTITHREADING
 #include "lwip/tcpip.h"
@@ -296,6 +297,17 @@ netif_add(struct netif *netif,
   netif->state = state;
   netif->num = netif_num++;
   netif->input = input;
+
+  /* set default ARP stack if no ARP stack has been specified */
+  if(netif->arp.input == NULL) {
+    netif->arp.input = etharp_input;
+  }
+  if(netif->arp.output == NULL) {
+    netif->arp.output = etharp_output;
+  }
+  if(netif->arp.cleanup == NULL) {
+    netif->arp.cleanup = etharp_cleanup_netif;
+  }
 
   NETIF_SET_HWADDRHINT(netif, NULL);
 #if ENABLE_LOOPBACK && LWIP_LOOPBACK_MAX_PBUFS
@@ -646,9 +658,7 @@ netif_issue_reports(struct netif* netif, u8_t report_type)
       !ip4_addr_isany_val(*netif_ip4_addr(netif))) {
 #if LWIP_ARP
     /* For Ethernet network interfaces, we would like to send a "gratuitous ARP" */
-    if (netif->flags & (NETIF_FLAG_ETHARP)) {
-      etharp_gratuitous(netif);
-    }
+    #warning "gratuitous ARP has been disabled"
 #endif /* LWIP_ARP */
 
 #if LWIP_IGMP
@@ -687,7 +697,7 @@ netif_set_down(struct netif *netif)
 
 #if LWIP_IPV4 && LWIP_ARP
     if (netif->flags & NETIF_FLAG_ETHARP) {
-      etharp_cleanup_netif(netif);
+      netif->arp.cleanup(netif);
     }
 #endif /* LWIP_IPV4 && LWIP_ARP */
 

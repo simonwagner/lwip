@@ -192,7 +192,7 @@ ethernet_input(struct pbuf *p, struct netif *netif)
         goto free_and_return;
       } else {
         /* pass p to ARP module */
-        etharp_input(p, netif);
+        netif->arp.input(p, netif);
       }
       break;
 #endif /* LWIP_IPV4 && LWIP_ARP */

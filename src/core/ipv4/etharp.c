@@ -58,6 +58,19 @@
 
 #if LWIP_IPV4 && LWIP_ARP /* don't build if not configured for use in lwipopts.h */
 
+//remove the static asserts, we provide the private implementation
+//in this file
+#undef etharp_get_entry
+#undef etharp_query
+#undef etharp_request
+
+static u8_t
+etharp_get_entry(u8_t i, ip4_addr_t **ipaddr, struct netif **netif, struct eth_addr **eth_ret);
+static err_t
+etharp_query(struct netif *netif, const ip4_addr_t *ipaddr, struct pbuf *q);
+static err_t
+etharp_request(struct netif *netif, const ip4_addr_t *ipaddr);
+
 /** Re-request a used ARP entry 1 minute before it would expire to prevent
  *  breaking a steadily used connection because the ARP entry timed out. */
 #define ARP_AGE_REREQUEST_USED_UNICAST   (ARP_MAXAGE - 30)
@@ -600,7 +613,7 @@ etharp_find_addr(struct netif *netif, const ip4_addr_t *ipaddr,
  * @param eth_ret return value: ETH address
  * @return 1 on valid index, 0 otherwise
  */
-u8_t
+static u8_t
 etharp_get_entry(u8_t i, ip4_addr_t **ipaddr, struct netif **netif, struct eth_addr **eth_ret)
 {
   LWIP_ASSERT("ipaddr != NULL", ipaddr != NULL);
@@ -944,7 +957,7 @@ etharp_output(struct netif *netif, struct pbuf *q, const ip4_addr_t *ipaddr)
  * - ERR_ARG Non-unicast address given, those will not appear in ARP cache.
  *
  */
-err_t
+static err_t
 etharp_query(struct netif *netif, const ip4_addr_t *ipaddr, struct pbuf *q)
 {
   struct eth_addr * srcaddr = (struct eth_addr *)netif->hwaddr;
@@ -1213,7 +1226,7 @@ etharp_request_dst(struct netif *netif, const ip4_addr_t *ipaddr, const struct e
  *         ERR_MEM if the ARP packet couldn't be allocated
  *         any other err_t on failure
  */
-err_t
+static err_t
 etharp_request(struct netif *netif, const ip4_addr_t *ipaddr)
 {
   LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_request: sending ARP request.\n"));

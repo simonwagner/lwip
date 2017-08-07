@@ -75,12 +75,10 @@ struct etharp_q_entry {
 
 #define etharp_init() /* Compatibility define, no init needed. */
 void etharp_tmr(void);
-s8_t etharp_find_addr(struct netif *netif, const ip4_addr_t *ipaddr,
-         struct eth_addr **eth_ret, const ip4_addr_t **ip_ret);
-u8_t etharp_get_entry(u8_t i, ip4_addr_t **ipaddr, struct netif **netif, struct eth_addr **eth_ret);
+#define etharp_get_entry(i, ipaddr, netif, eth_ret) _Static_assert(0, "etharp_get_entry is not supported in this version of lwip as we allow an external ARP stack")
 err_t etharp_output(struct netif *netif, struct pbuf *q, const ip4_addr_t *ipaddr);
-err_t etharp_query(struct netif *netif, const ip4_addr_t *ipaddr, struct pbuf *q);
-err_t etharp_request(struct netif *netif, const ip4_addr_t *ipaddr);
+#define etharp_query(netif, ipaddr, q) _Static_assert(0, "etharp_query is not supported in this version of lwip as we allow an external ARP stack")
+#define etharp_request(netif, ipaddr) _Static_assert(0, "etharp_request is not supported in this version of lwip as we allow an external ARP stack")
 /** For Ethernet network interfaces, we might want to send "gratuitous ARP";
  *  this is an ARP packet sent by a node in order to spontaneously cause other
  *  nodes to update an entry in their ARP cache.
